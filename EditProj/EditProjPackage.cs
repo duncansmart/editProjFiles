@@ -29,6 +29,8 @@ namespace rdomunozcom.EditProj
         // Calling the QueryEditFiles method within the body pops up a query dialog. While the dialog is waiting for the user, the shell automatically can call the method checking for dirtiness and that will call CanEditFile again. To avoid recursion we use the _GettingCheckOutStatus flag as a guard
         private bool gettingCheckoutStatus = false;
 
+        static string tempDir = Path.Combine(Path.GetTempPath(), "~" + typeof(EditProjPackage).Namespace + "~" + Path.GetRandomFileName());
+
         public EditProjPackage()
         {
         }
@@ -78,7 +80,8 @@ namespace rdomunozcom.EditProj
                         this.tempToProjFiles.Remove(tempProjFilePath);
                     }
 
-                    tempProjFilePath = GetNewTempFilePath();
+                    Directory.CreateDirectory(tempDir);
+                    tempProjFilePath = Path.Combine(tempDir, Path.GetFileName(projFilePath));
                     this.tempToProjFiles[tempProjFilePath] = projFilePath;
                 }
 
@@ -118,14 +121,6 @@ namespace rdomunozcom.EditProj
             string projFilePath = null;
             ((IVsProject)hierarchy).GetMkDocument(itemid, out projFilePath);
             return projFilePath;
-        }
-
-        private static string GetNewTempFilePath()
-        {
-            string tempDir = Path.GetTempPath();
-            string tempProjFile = Guid.NewGuid().ToString() + ".xml";
-            string tempProjFilePath = Path.Combine(tempDir, tempProjFile);
-            return tempProjFilePath;
         }
 
         private static void CreateTempFileWithContentsOf(string sourcePath, string destPath)

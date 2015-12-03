@@ -65,7 +65,7 @@ namespace rdomunozcom.EditProj
         {
             try
             {
-                string projFilePath = GetPathOfSelectedItem();
+                string projFilePath = GetPathOfSelectedProject();
                 string tempProjFilePath;
 
                 if (TempFileExists(projFilePath, out tempProjFilePath))
@@ -100,27 +100,14 @@ namespace rdomunozcom.EditProj
             return this.tempToProjFiles.FirstOrDefault(kv => kv.Value == projFilePath).Key;
         }
 
-        private string GetPathOfSelectedItem()
+        private string GetPathOfSelectedProject()
         {
-            IVsUIShellOpenDocument openDocument = Package.GetGlobalService(typeof(SVsUIShellOpenDocument)) as IVsUIShellOpenDocument;
-
-            IVsMonitorSelection monitorSelection = Package.GetGlobalService(typeof(SVsShellMonitorSelection)) as IVsMonitorSelection;
-
-            IVsMultiItemSelect multiItemSelect = null;
-            IntPtr hierarchyPtr = IntPtr.Zero;
-            IntPtr selectionContainerPtr = IntPtr.Zero;
-            int hr = VSConstants.S_OK;
-            uint itemid = VSConstants.VSITEMID_NIL;
-
-            hr = monitorSelection.GetCurrentSelection(out hierarchyPtr, out itemid, out multiItemSelect, out selectionContainerPtr);
-
-            IVsHierarchy hierarchy = Marshal.GetObjectForIUnknown(hierarchyPtr) as IVsHierarchy;
-            IVsUIHierarchy uiHierarchy = hierarchy as IVsUIHierarchy;
-
-            // Get the file path
-            string projFilePath = null;
-            ((IVsProject)hierarchy).GetMkDocument(itemid, out projFilePath);
-            return projFilePath;
+            var selectedItem = this.dte.SelectedItems.Cast<SelectedItem>().FirstOrDefault();
+            if (selectedItem != null && selectedItem.Project != null)
+            {
+                return selectedItem.Project.FileName;
+            }
+            return null;
         }
 
         private bool TempFileExists(string projFilePath, out string tempProjFile)

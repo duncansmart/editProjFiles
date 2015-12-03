@@ -85,7 +85,7 @@ namespace rdomunozcom.EditProj
                     this.tempToProjFiles[tempProjFilePath] = projFilePath;
                 }
 
-                CreateTempFileWithContentsOf(projFilePath, tempProjFilePath);
+                File.Copy(projFilePath, tempProjFilePath, true);
                 OpenFileInEditor(tempProjFilePath);
             }
 
@@ -121,12 +121,6 @@ namespace rdomunozcom.EditProj
             string projFilePath = null;
             ((IVsProject)hierarchy).GetMkDocument(itemid, out projFilePath);
             return projFilePath;
-        }
-
-        private static void CreateTempFileWithContentsOf(string sourcePath, string destPath)
-        {
-            string projectData = File.ReadAllText(sourcePath);
-            File.WriteAllText(destPath, projectData);
         }
 
         private bool TempFileExists(string projFilePath, out string tempProjFile)
@@ -178,12 +172,12 @@ namespace rdomunozcom.EditProj
 
         private void UpdateProjFile(string tempFilePath)
         {
-            string contents = ReadFile(tempFilePath);
+            string contents = File.ReadAllText(tempFilePath);
             string projFile = this.tempToProjFiles[tempFilePath];
             if (CanEditFile(this.tempToProjFiles[tempFilePath]))
             {
                 NotifyForSave(projFile);
-                SetFileContents(projFile, contents);
+                File.WriteAllText(projFile, contents);
                 NotifyDocChanged(projFile);
             }
         }
@@ -194,16 +188,6 @@ namespace rdomunozcom.EditProj
             IVsQueryEditQuerySave2 queryEditQuerySave = (IVsQueryEditQuerySave2)GetService(typeof(SVsQueryEditQuerySave));
             uint result;
             hr = queryEditQuerySave.QuerySaveFile(filePath, 0, null, out result);
-        }
-
-        private static void SetFileContents(string filePath, string content)
-        {
-            File.WriteAllText(filePath, content);
-        }
-
-        private static string ReadFile(string filePath)
-        {
-            return File.ReadAllText(filePath);
         }
 
         private bool CanEditFile(string filePath)

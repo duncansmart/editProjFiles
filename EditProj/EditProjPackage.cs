@@ -162,8 +162,10 @@ namespace rdomunozcom.EditProj
             switch ((uint)ID)
             {
                 case (uint)Microsoft.VisualStudio.VSConstants.VSStd97CmdID.SaveProjectItem:
-                        UpdateProjFile(dte.ActiveWindow.Document.FullName);
-                        break;
+                    var tempProjFilePath = dte.ActiveDocument.FullName;
+                    if (this.tempToProjFiles.ContainsKey(tempProjFilePath))
+                        UpdateProjFile(tempProjFilePath);
+                    break;
                 case (uint)Microsoft.VisualStudio.VSConstants.VSStd97CmdID.SaveSolution:
                     foreach (string tempProjFile in this.tempToProjFiles.Keys)
                     {

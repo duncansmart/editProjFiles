@@ -20,7 +20,7 @@ namespace rdomunozcom.EditProj
     [Guid(GuidList.guidEditProjPkgString)]
     public sealed class EditProjPackage : Package
     {
-        private CommandEvents saveFileCommand, saveAllCommand, exitCommand;
+        private CommandEvents exitCommand;
         private DocumentEvents documentEvents;
         private DTE dte;
         private IDictionary<string, string> tempToProjFiles =
@@ -48,16 +48,12 @@ namespace rdomunozcom.EditProj
 
                 this.dte = this.GetService(typeof(DTE)) as DTE;
                 // need to keep a strong reference to CommandEvents so that it's not GC'ed
-                this.saveFileCommand = this.dte.Events.CommandEvents[VSConstants.CMDSETID.StandardCommandSet97_string, (int)VSConstants.VSStd97CmdID.SaveProjectItem];
-                this.saveAllCommand = this.dte.Events.CommandEvents[VSConstants.CMDSETID.StandardCommandSet97_string, (int)VSConstants.VSStd97CmdID.SaveSolution];
                 this.exitCommand = this.dte.Events.CommandEvents[VSConstants.CMDSETID.StandardCommandSet97_string, (int)VSConstants.VSStd97CmdID.Exit];
 
-                this.saveFileCommand.AfterExecute += saveCommands_AfterExecute;
-                
                 documentEvents = this.dte.Events.DocumentEvents;
+                documentEvents.DocumentSaved += documentSaved;
                 documentEvents.DocumentClosing += documentClosing;
 
-                this.saveAllCommand.AfterExecute += saveCommands_AfterExecute;
                 this.exitCommand.BeforeExecute += exitCommand_BeforeExecute;
                 mcs.AddCommand(menuItem);
             }
@@ -157,24 +153,10 @@ namespace rdomunozcom.EditProj
             this.dte.ExecuteCommand("File.OpenFile", filePath);
         }
 
-        private void saveCommands_AfterExecute(string Guid, int ID, object CustomIn, object CustomOut)
+        private void documentSaved(Document document)
         {
-            switch ((uint)ID)
-            {
-                case (uint)Microsoft.VisualStudio.VSConstants.VSStd97CmdID.SaveProjectItem:
-                    var tempProjFilePath = dte.ActiveDocument.FullName;
-                    if (this.tempToProjFiles.ContainsKey(tempProjFilePath))
-                        UpdateProjFile(tempProjFilePath);
-                    break;
-                case (uint)Microsoft.VisualStudio.VSConstants.VSStd97CmdID.SaveSolution:
-                    foreach (string tempProjFile in this.tempToProjFiles.Keys)
-                    {
-                        UpdateProjFile(tempProjFile);
-                    }
-                    break;
-                default:
-                    return;
-            }
+            if (this.tempToProjFiles.ContainsKey(document.FullName))
+                UpdateProjFile(document.FullName);
         }
 
         private void documentClosing(Document document)
